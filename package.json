@@ -1,7 +1,8 @@
 {
   "dependencies": {
     "dotenv": "^17.4.2",
-    "express": "^5.2.1"
+    "express": "^5.2.1",
+    "pg": "^8.20.0"
   },
   "name": "clinica-veterinaria-m2",
   "version": "1.0.0",
@@ -14,7 +15,21 @@
     "start": "node index.js",
     "dev": "nodemon index.js"
   },
-  "keywords": ["clinica", "veterinaria", "pets", "consultas"],
+  "keywords": [
+    "clinica",
+    "veterinaria",
+    "pets",
+    "consultas"
+  ],
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Arthur080409/avaliacao-m2-ClinicaVeterinaria-ADS.git"
+  },
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Arthur080409/avaliacao-m2-ClinicaVeterinaria-ADS/issues"
+  },
+  "homepage": "https://github.com/Arthur080409/avaliacao-m2-ClinicaVeterinaria-ADS#readme"
 }

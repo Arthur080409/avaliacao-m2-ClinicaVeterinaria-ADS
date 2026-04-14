@@ -1,117 +1,59 @@
-const { pets, tutores } = require('../../db');
+const pool = require('../../db');
 
-// Lista todos os pets
-const listarPets = async () => {
-  return pets;
-};
-
-// Busca um pet específico pelo ID
-const buscarPetPorId = async (id) => {
-  const pet = pets.find((p) => p.id === Number(id));
-  return pet || null;
-};
-
-// Lista pets de um tutor específico
-const listarPetsPorTutor = async (tutor_id) => {
-  const petsPorTutor = pets.filter((p) => p.tutor_id === Number(tutor_id));
-  return petsPorTutor;
-};
-
-// Criar um novo pet
-const cadastrarPet = async ({
-  nome,
-  especie,
-  raca,
-  data_nascimento,
-  tutor_id,
-}) => {
-  // Validações de negócio
-  if (!nome || !especie || !raca || !tutor_id) {
-    throw new Error(
-      'Nome, espécie, raça e tutor_id são obrigatórios! 🐾'
-    );
-  }
-
-  // Verificar se tutor existe
-  const tutorExiste = tutores.some((t) => t.id === Number(tutor_id));
-  if (!tutorExiste) {
-    throw new Error('Tutor não encontrado no sistema! ⚠️');
-  }
-
-  // Validar data
-  if (data_nascimento) {
-    const data = new Date(data_nascimento);
-    if (isNaN(data.getTime())) {
-      throw new Error('Data de nascimento inválida! 📅');
+class PetsService {
+  async listarTodos() {
+    try {
+      const result = await pool.query('SELECT * FROM pets');
+      return result.rows;
+    } catch (error) {
+      throw new Error(`Erro ao listar pets: ${error.message}`);
     }
   }
 
-  const novoPet = {
-    id: Math.max(...pets.map((p) => p.id), 0) + 1,
-    nome,
-    especie,
-    raca,
-    data_nascimento: data_nascimento || null,
-    tutor_id: Number(tutor_id),
-  };
-
-  pets.push(novoPet);
-  return novoPet;
-};
-
-// Atualizar um pet
-const atualizarPet = async (
-  id,
-  { nome, especie, raca, data_nascimento, tutor_id }
-) => {
-  const pet = pets.find((p) => p.id === Number(id));
-
-  if (!pet) {
-    return null;
-  }
-
-  // Se tutor_id foi modificado, validar
-  if (tutor_id) {
-    const tutorExiste = tutores.some((t) => t.id === Number(tutor_id));
-    if (!tutorExiste) {
-      throw new Error('Tutor não encontrado no sistema! ⚠️');
+  async obterPorId(id) {
+    try {
+      const result = await pool.query('SELECT * FROM pets WHERE id = $1', [id]);
+      return result.rows[0] || null;
+    } catch (error) {
+      throw new Error(`Erro ao buscar pet: ${error.message}`);
     }
   }
 
-  // Validar data se fornecida
-  if (data_nascimento) {
-    const data = new Date(data_nascimento);
-    if (isNaN(data.getTime())) {
-      throw new Error('Data de nascimento inválida! 📅');
+  async criar({ nome, especie, raca, idade, tutor_id }) {
+    try {
+      if (!nome || !especie || !tutor_id) {
+        throw new Error('Nome, espécie e tutor_id são obrigatórios');
+      }
+      const result = await pool.query(
+        'INSERT INTO pets (nome, especie, raca, idade, tutor_id) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+        [nome, especie, raca, idade, tutor_id]
+      );
+      return result.rows[0];
+    } catch (error) {
+      throw new Error(`Erro ao criar pet: ${error.message}`);
     }
   }
 
-  if (nome) pet.nome = nome;
-  if (especie) pet.especie = especie;
-  if (raca) pet.raca = raca;
-  if (data_nascimento) pet.data_nascimento = data_nascimento;
-  if (tutor_id) pet.tutor_id = Number(tutor_id);
-
-  return pet;
-};
-
-// Deletar um pet
-const deletarPet = async (id) => {
-  const index = pets.findIndex((p) => p.id === Number(id));
-
-  if (index === -1) {
-    return null;
+  async atualizar(id, { nome, especie, raca, idade, tutor_id }) {
+    try {
+      const result = await pool.query(
+        'UPDATE pets SET nome = COALESCE($1, nome), especie = COALESCE($2, especie), raca = COALESCE($3, raca), idade = COALESCE($4, idade), tutor_id = COALESCE($5, tutor_id) WHERE id = $6 RETURNING *',
+        [nome, especie, raca, idade, tutor_id, id]
+      );
+      return result.rows[0] || null;
+    } catch (error) {
+      throw new Error(`Erro ao atualizar pet: ${error.message}`);
+    }
   }
 
-  const petDeletado = pets.splice(index, 1)[0];
-  return petDeletado;
-};
+  async deletar(id) {
+    try {
+      const result = await pool.query('DELETE FROM pets WHERE id = $1 RETURNING *', [id]);
+      return result.rows[0] || null;
+    } catch (error) {
+      throw new Error(`Erro ao deletar pet: ${error.message}`);
+    }
+  }
+}
 
-module.exports = {
-  listarPets,
-  buscarPetPorId,
-  listarPetsPorTutor,
-  cadastrarPet,
-  atualizarPet,
-  deletarPet,
-};
+module.exports = new PetsService();

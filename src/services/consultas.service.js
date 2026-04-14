@@ -1,117 +1,59 @@
-const { consultas, pets } = require('../../db');
+const pool = require('../../db');
 
-// Lista todas as consultas
-const listarConsultas = async () => {
-  return consultas;
-};
-
-// Busca uma consulta específica pelo ID
-const buscarConsultaPorId = async (id) => {
-  const consulta = consultas.find((c) => c.id === Number(id));
-  return consulta || null;
-};
-
-// Lista consultas de um animal específico
-const listarConsultasPorAnimal = async (animal_id) => {
-  const consultasPorAnimal = consultas.filter(
-    (c) => c.animal_id === Number(animal_id)
-  );
-  return consultasPorAnimal;
-};
-
-// Criar uma nova consulta
-const cadastrarConsulta = async ({
-  animal_id,
-  data_consulta,
-  motivo,
-  diagnostico,
-  veterinario,
-}) => {
-  // Validações de negócio
-  if (!animal_id || !data_consulta || !motivo || !veterinario) {
-    throw new Error(
-      'Animal, data da consulta, motivo e veterinário são obrigatórios! 🏥'
-    );
-  }
-
-  // Verificar se animal (pet) existe
-  const animalExiste = pets.some((p) => p.id === Number(animal_id));
-  if (!animalExiste) {
-    throw new Error('Animal não encontrado no sistema! ⚠️');
-  }
-
-  // Validar data
-  const data = new Date(data_consulta);
-  if (isNaN(data.getTime())) {
-    throw new Error('Data da consulta inválida! 📅');
-  }
-
-  const novaConsulta = {
-    id: Math.max(...consultas.map((c) => c.id), 0) + 1,
-    animal_id: Number(animal_id),
-    data_consulta,
-    motivo,
-    diagnostico: diagnostico || '',
-    veterinario,
-  };
-
-  consultas.push(novaConsulta);
-  return novaConsulta;
-};
-
-// Atualizar uma consulta
-const atualizarConsulta = async (
-  id,
-  { animal_id, data_consulta, motivo, diagnostico, veterinario }
-) => {
-  const consulta = consultas.find((c) => c.id === Number(id));
-
-  if (!consulta) {
-    return null;
-  }
-
-  // Se animal_id foi modificado, validar
-  if (animal_id) {
-    const animalExiste = pets.some((p) => p.id === Number(animal_id));
-    if (!animalExiste) {
-      throw new Error('Animal não encontrado no sistema! ⚠️');
+class ConsultasService {
+  async listarTodas() {
+    try {
+      const result = await pool.query('SELECT * FROM consultas');
+      return result.rows;
+    } catch (error) {
+      throw new Error(`Erro ao listar consultas: ${error.message}`);
     }
   }
 
-  // Validar data se fornecida
-  if (data_consulta) {
-    const data = new Date(data_consulta);
-    if (isNaN(data.getTime())) {
-      throw new Error('Data da consulta inválida! 📅');
+  async obterPorId(id) {
+    try {
+      const result = await pool.query('SELECT * FROM consultas WHERE id = $1', [id]);
+      return result.rows[0] || null;
+    } catch (error) {
+      throw new Error(`Erro ao buscar consulta: ${error.message}`);
     }
   }
 
-  if (animal_id) consulta.animal_id = Number(animal_id);
-  if (data_consulta) consulta.data_consulta = data_consulta;
-  if (motivo) consulta.motivo = motivo;
-  if (diagnostico !== undefined) consulta.diagnostico = diagnostico;
-  if (veterinario) consulta.veterinario = veterinario;
-
-  return consulta;
-};
-
-// Deletar uma consulta
-const deletarConsulta = async (id) => {
-  const index = consultas.findIndex((c) => c.id === Number(id));
-
-  if (index === -1) {
-    return null;
+  async criar({ pet_id, data_consulta, descricao, diagnostico }) {
+    try {
+      if (!pet_id || !data_consulta) {
+        throw new Error('pet_id e data_consulta são obrigatórios');
+      }
+      const result = await pool.query(
+        'INSERT INTO consultas (pet_id, data_consulta, descricao, diagnostico) VALUES ($1, $2, $3, $4) RETURNING *',
+        [pet_id, data_consulta, descricao, diagnostico]
+      );
+      return result.rows[0];
+    } catch (error) {
+      throw new Error(`Erro ao criar consulta: ${error.message}`);
+    }
   }
 
-  const consultaDeletada = consultas.splice(index, 1)[0];
-  return consultaDeletada;
-};
+  async atualizar(id, { pet_id, data_consulta, descricao, diagnostico }) {
+    try {
+      const result = await pool.query(
+        'UPDATE consultas SET pet_id = COALESCE($1, pet_id), data_consulta = COALESCE($2, data_consulta), descricao = COALESCE($3, descricao), diagnostico = COALESCE($4, diagnostico) WHERE id = $5 RETURNING *',
+        [pet_id, data_consulta, descricao, diagnostico, id]
+      );
+      return result.rows[0] || null;
+    } catch (error) {
+      throw new Error(`Erro ao atualizar consulta: ${error.message}`);
+    }
+  }
 
-module.exports = {
-  listarConsultas,
-  buscarConsultaPorId,
-  listarConsultasPorAnimal,
-  cadastrarConsulta,
-  atualizarConsulta,
-  deletarConsulta,
-};
+  async deletar(id) {
+    try {
+      const result = await pool.query('DELETE FROM consultas WHERE id = $1 RETURNING *', [id]);
+      return result.rows[0] || null;
+    } catch (error) {
+      throw new Error(`Erro ao deletar consulta: ${error.message}`);
+    }
+  }
+}
+
+module.exports = new ConsultasService();

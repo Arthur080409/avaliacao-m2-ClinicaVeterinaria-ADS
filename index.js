@@ -1,18 +1,21 @@
 const express = require('express');
 const routes = require('./src/routes/index.routes');
+const logger = require('./src/middlewares/logger.middleware');
+const errorHandler = require('./src/middlewares/errorHandler.middleware');
+
 const app = express();
 
+// Middlewares
 app.use(express.json());
+app.use(logger);
 
-app.use((req, res, next) => {
-  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
-  next();
-});
-
-// Utilizando as rotas
+// Rotas
 app.use(routes);
 
-const PORT = 3000;
+// Middleware de tratamento de erros (deve ser o último)
+app.use(errorHandler);
+
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`[SERVIDOR]: Clínica Veterinária Ralph & Teddy online em http://localhost:${PORT}`);
 });
