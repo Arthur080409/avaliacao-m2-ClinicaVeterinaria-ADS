@@ -1,11 +1,7 @@
 const logger = (req, res, next) => {
   const timestamp = new Date().toISOString();
-  const metodo = req.method;
-  const url = req.url;
-
-  console.log(`[CLÍNICA VETERINÁRIA] ${timestamp} | ${metodo} ${url}`);
-
-  next();
+  console.log(`[BIBLIOTECA] ${timestamp} | ${req.method} ${req.url}`);
+  next(); // ← OBRIGATÓRIO: passa para o próximo posto
 };
 
 module.exports = logger;
