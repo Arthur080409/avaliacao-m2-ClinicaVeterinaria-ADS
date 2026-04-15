@@ -11,7 +11,7 @@ const errorHandler = (err, req, res, next) => {
 
   // NUNCA envie err.stack para o cliente em produção.
   res.status(status).json({
-    erro: err.message || 'Erro interno na Biblioteca Ralph & Teddy.',
+    erro: err.message || 'Erro interno na Clínica Veterinária.',
     caminho: req.url,
   });
 };

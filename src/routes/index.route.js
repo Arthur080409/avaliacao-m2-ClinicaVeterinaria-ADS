@@ -1,14 +1,15 @@
 const express = require('express');
 const router = express.Router();
 // Importação das Rotas
-const livroRoute = require('./livro.route');
-const usuarioRoute = require('./usuario.route');
+const petRoute = require('./pet.route');
+const tutorRoute = require('./tutor.route');
+const consultaRoute = require('./consulta.route');
 // Importação Seletiva de Middlewares
 const { autenticar, validarContentType } = require('../middlewares/main.middleware');
 
 // 1. Rota Raiz (Totalmente Pública)
 router.get('/', (req, res) => {
-  res.json({ sistema: 'Biblioteca Ralph & Teddy', status: 'Online' });
+  res.json({ sistema: 'Clínica Veterinária Ralph & Teddy', status: 'Online' });
 });
 
 // 2. Aplicando a "Barreira" de Segurança
@@ -17,14 +18,15 @@ router.use(autenticar);
 router.use(validarContentType);
 
 // 3. Rotas Protegidas
-router.use('/livros', livroRoute);
-router.use('/usuarios', usuarioRoute);
+router.use('/pets', petRoute);
+router.use('/tutores', tutorRoute);
+router.use('/consultas', consultaRoute);
 
 // 4. Rota 404 - Caso nenhuma rota acima seja encontrada
 router.use((req, res) => {
   res
     .status(404)
-    .json({ erro: 'Rota não encontrada na Biblioteca Ralph & Teddy.' });
+    .json({ erro: 'Rota não encontrada na Clínica Veterinária Ralph & Teddy.' });
 });
 
 module.exports = router;
