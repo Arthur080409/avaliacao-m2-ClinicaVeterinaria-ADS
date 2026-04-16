@@ -17,5 +17,5 @@ app.use(errorHandler);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`[SERVIDOR]: Clínica Veterinária Ralph & Teddy online em http://localhost:${PORT}`);
+  console.log(`[SERVIDOR]: Clínica Veterinária online em http://localhost:${PORT}`);
 });

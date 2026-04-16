@@ -10,7 +10,7 @@ const validarContentType = (req, res, next) => {
       return res.status(415).json({
         erro: 'Tipo de mídia não suportado',
         mensagem:
-          'A Clínica Veterinária Ralph & Teddy exige Content-Type: application/json para esta operação.',
+          'A Clínica Veterinária exige Content-Type: application/json para esta operação.',
       });
     }
   }

@@ -9,7 +9,7 @@ const { autenticar, validarContentType } = require('../middlewares/main.middlewa
 
 // 1. Rota Raiz (Totalmente Pública)
 router.get('/', (req, res) => {
-  res.json({ sistema: 'Clínica Veterinária Ralph & Teddy', status: 'Online' });
+  res.json({ sistema: 'Clínica Veterinária', status: 'Online' });
 });
 
 // 2. Aplicando a "Barreira" de Segurança
@@ -26,7 +26,7 @@ router.use('/consultas', consultaRoute);
 router.use((req, res) => {
   res
     .status(404)
-    .json({ erro: 'Rota não encontrada na Clínica Veterinária Ralph & Teddy.' });
+    .json({ erro: 'Rota não encontrada na Clínica Veterinária.' });
 });
 
 module.exports = router;
