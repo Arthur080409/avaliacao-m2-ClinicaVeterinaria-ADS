@@ -1,31 +1,13 @@
-const tutores = [
-  {
-    id: 1,
-    nome: 'Anderson Dutra',
-    telefone: '(11) 99999-0001',
-    email: 'anderson@gmail.com',
-  },
-  {
-    id: 2,
-    nome: 'Ralph Dutra',
-    telefone: '(11) 99999-0002',
-    email: 'ralph@gmail.com',
-  },
-  {
-    id: 3,
-    nome: 'Teddy Dutra',
-    telefone: '(11) 99999-0003',
-    email: 'teddy@gmail.com',
-  },
-];
+const pool = require('../../db');
 
 const listarTodosTutores = async () => {
-  return tutores;
+  const result = await pool.query('SELECT * FROM tutores ORDER BY id');
+  return result.rows;
 };
 
 const buscarTutorPorId = async (id) => {
-  const tutor = tutores.find((item) => item.id === Number(id));
-  return tutor || null;
+  const result = await pool.query('SELECT * FROM tutores WHERE id = $1', [id]);
+  return result.rows[0] || null;
 };
 
 const criarTutor = async ({ nome, email, telefone }) => {
@@ -33,25 +15,70 @@ const criarTutor = async ({ nome, email, telefone }) => {
     throw new Error('Nome, e-mail e telefone são obrigatórios.');
   }
 
-  const novoTutor = {
-    id: tutores.length + 1,
-    nome,
-    email,
-    telefone,
-  };
+  const result = await pool.query(
+    'INSERT INTO tutores (nome, email, telefone) VALUES ($1, $2, $3) RETURNING *',
+    [nome, email, telefone]
+  );
+  return result.rows[0];
+};
 
-  tutores.push(novoTutor);
-  return novoTutor;
+const atualizarTutor = async (id, { nome, email, telefone }) => {
+  const campos = [];
+  const valores = [];
+
+  if (nome !== undefined) {
+    campos.push('nome = $' + (campos.length + 1));
+    valores.push(nome);
+  }
+  if (email !== undefined) {
+    campos.push('email = $' + (campos.length + 1));
+    valores.push(email);
+  }
+  if (telefone !== undefined) {
+    campos.push('telefone = $' + (campos.length + 1));
+    valores.push(telefone);
+  }
+
+  if (campos.length === 0) {
+    throw new Error('Nenhum campo para atualizar.');
+  }
+
+  const query = `UPDATE tutores SET ${campos.join(', ')} WHERE id = $${campos.length + 1} RETURNING *`;
+  valores.push(id);
+
+  const result = await pool.query(query, valores);
+  return result.rows[0];
 };
 
 const excluirTutor = async (id) => {
-  const index = tutores.findIndex((item) => item.id === Number(id));
-  if (index === -1) {
-    return null;
-  }
+  const client = await pool.connect();
 
-  const [tutorRemovido] = tutores.splice(index, 1);
-  return tutorRemovido;
+  try {
+    await client.query('BEGIN');
+    
+    // Remove todas as consultas dos pets do tutor
+    await client.query(
+      'DELETE FROM consultas WHERE animal_id IN (SELECT id FROM animais WHERE tutor_id = $1)',
+      [id]
+    );
+    
+    // Remove todos os pets do tutor
+    await client.query('DELETE FROM animais WHERE tutor_id = $1', [id]);
+
+    // Remove o tutor
+    const result = await client.query(
+      'DELETE FROM tutores WHERE id = $1 RETURNING *',
+      [id]
+    );
+
+    await client.query('COMMIT');
+    return result.rows[0];
+  } catch (erro) {
+    await client.query('ROLLBACK');
+    throw erro;
+  } finally {
+    client.release();
+  }
 };
 
-module.exports = { listarTodosTutores, buscarTutorPorId, criarTutor, excluirTutor };
+module.exports = { listarTodosTutores, buscarTutorPorId, criarTutor, atualizarTutor, excluirTutor };

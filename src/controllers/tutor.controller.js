@@ -41,6 +41,29 @@ const criarTutor = async (req, res) => {
   }
 };
 
+// PUT /tutores/:id — Atualiza tutor por ID
+const atualizarTutor = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { nome, email, telefone } = req.body;
+
+    const tutorExistente = await tutorService.buscarTutorPorId(id);
+    if (!tutorExistente) {
+      return res.status(404).json({ erro: `Tutor ${id} não encontrado.` });
+    }
+
+    const tutorAtualizado = await tutorService.atualizarTutor(id, {
+      nome,
+      email,
+      telefone,
+    });
+
+    res.status(200).json({ mensagem: 'Tutor atualizado com sucesso!', tutor: tutorAtualizado });
+  } catch (erro) {
+    res.status(400).json({ erro: erro.message });
+  }
+};
+
 // DELETE /tutores/:id — Remove tutor por ID
 const excluirTutor = async (req, res) => {
   try {
@@ -57,4 +80,4 @@ const excluirTutor = async (req, res) => {
   }
 };
 
-module.exports = { listarTutores, buscarTutorPorId, criarTutor, excluirTutor };
+module.exports = { listarTutores, buscarTutorPorId, criarTutor, atualizarTutor, excluirTutor };
